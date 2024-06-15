@@ -1,0 +1,6 @@
+.vscode/
+*.cpp
+*.exe
+*.bin
+*.elf
+main
