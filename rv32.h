@@ -25,6 +25,7 @@ struct rv32_state {
 
     uint32_t x[32];
     uint32_t pc;
+    uint32_t opcode;
 };
 
 struct rv32_state* rv32_create(void);

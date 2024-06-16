@@ -3,6 +3,13 @@
 
 #include "rv32.h"
 
+#define RV32_U_IMM ((cpu->opcode >> 12) & 0xfffff)
+#define RV32_U_RD ((cpu->opcode >> 7) & 0x1f)
+#define RV32_I_RD ((cpu->opcode >> 7) & 0x1f)
+#define RV32_I_RS1 ((cpu->opcode >> 15) & 0x1f)
+#define RV32_I_IMM ((cpu->opcode >> 20) & 0xfff)
+#define SE32(v, b) (((int32_t)((v) << (32 - b))) >> (32 - b))
+
 void rv32_i_add(struct rv32_state* cpu) { puts("rv32: add unimplemented"); exit(1); }
 void rv32_i_sub(struct rv32_state* cpu) { puts("rv32: sub unimplemented"); exit(1); }
 void rv32_i_xor(struct rv32_state* cpu) { puts("rv32: xor unimplemented"); exit(1); }
@@ -13,7 +20,13 @@ void rv32_i_srl(struct rv32_state* cpu) { puts("rv32: srl unimplemented"); exit(
 void rv32_i_sra(struct rv32_state* cpu) { puts("rv32: sra unimplemented"); exit(1); }
 void rv32_i_slt(struct rv32_state* cpu) { puts("rv32: slt unimplemented"); exit(1); }
 void rv32_i_sltu(struct rv32_state* cpu) { puts("rv32: sltu unimplemented"); exit(1); }
-void rv32_i_addi(struct rv32_state* cpu) { puts("rv32: addi unimplemented"); exit(1); }
+void rv32_i_addi(struct rv32_state* cpu) {
+    uint32_t d = RV32_I_RD;
+    uint32_t s1 = RV32_I_RS1;
+    uint32_t imm = RV32_I_IMM;
+
+    cpu->x[d] = cpu->x[s1] + SE32(imm, 12);
+}
 void rv32_i_xori(struct rv32_state* cpu) { puts("rv32: xori unimplemented"); exit(1); }
 void rv32_i_ori(struct rv32_state* cpu) { puts("rv32: ori unimplemented"); exit(1); }
 void rv32_i_andi(struct rv32_state* cpu) { puts("rv32: andi unimplemented"); exit(1); }
@@ -39,7 +52,14 @@ void rv32_i_bgeu(struct rv32_state* cpu) { puts("rv32: bgeu unimplemented"); exi
 void rv32_i_jal(struct rv32_state* cpu) { puts("rv32: jal unimplemented"); exit(1); }
 void rv32_i_jalr(struct rv32_state* cpu) { puts("rv32: jalr unimplemented"); exit(1); }
 void rv32_i_lui(struct rv32_state* cpu) { puts("rv32: lui unimplemented"); exit(1); }
-void rv32_i_auipc(struct rv32_state* cpu) { puts("rv32: auipc unimplemented"); exit(1); }
+void rv32_i_auipc(struct rv32_state* cpu) {
+    uint32_t imm = RV32_U_IMM;
+    uint32_t d = RV32_U_RD;
+
+    cpu->x[d] = cpu->pc + imm;
+
+    printf("auipc x%u, %08x\n", d, imm);
+}
 void rv32_i_ecall(struct rv32_state* cpu) { puts("rv32: ecall unimplemented"); exit(1); }
 void rv32_i_ebreak(struct rv32_state* cpu) { puts("rv32: ebreak unimplemented"); exit(1); }
 void rv32_i_mul(struct rv32_state* cpu) { puts("rv32: mul unimplemented"); exit(1); }

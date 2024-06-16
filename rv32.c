@@ -98,13 +98,13 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
 void rv32_cycle(struct rv32_state* cpu) {
     uint32_t opcode = rv32_bus_read32(cpu, cpu->pc);
 
-    cpu->pc += 4;
-
     if (!rv32_execute(cpu, opcode)) {
         printf("Unimplemented instruction %08x\n", opcode);
 
         exit(1);
     }
+
+    cpu->pc += 4;
 }
 
 uint32_t rv32_bus_read32(struct rv32_state* cpu, uint32_t addr) {
