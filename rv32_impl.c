@@ -8,6 +8,22 @@
 #define RV32_I_RD ((cpu->opcode >> 7) & 0x1f)
 #define RV32_I_RS1 ((cpu->opcode >> 15) & 0x1f)
 #define RV32_I_IMM ((cpu->opcode >> 20) & 0xfff)
+#define RV32_S_RS1 ((cpu->opcode >> 15) & 0x1f)
+#define RV32_S_RS2 ((cpu->opcode >> 20) & 0x1f)
+#define RV32_S_IMM (((cpu->opcode >> 7 ) & 0x1f) | \
+                   (((cpu->opcode >> 25) & 0x7f) << 5))
+#define RV32_J_RD ((cpu->opcode >> 7) & 0x1f)
+#define RV32_J_IMM ((((cpu->opcode >> 21) & 0x3ff) | \
+                    (((cpu->opcode >> 20) & 1) << 10) | \
+                    (((cpu->opcode >> 12) & 0xff) << 11) | \
+                    (((cpu->opcode >> 31) & 1) << 19)) << 1)
+#define RV32_B_RS1 ((cpu->opcode >> 15) & 0x1f)
+#define RV32_B_RS2 ((cpu->opcode >> 20) & 0x1f)
+#define RV32_B_IMM ((((cpu->opcode >> 8) & 0xf) | \
+                    (((cpu->opcode >> 25) & 0x3f) << 4) | \
+                    (((cpu->opcode >> 7) & 1) << 10) | \
+                    (((cpu->opcode >> 31) & 1) << 11)) << 1)
+                   
 #define SE32(v, b) (((int32_t)((v) << (32 - b))) >> (32 - b))
 
 void rv32_i_add(struct rv32_state* cpu) { puts("rv32: add unimplemented"); exit(1); }
@@ -26,6 +42,8 @@ void rv32_i_addi(struct rv32_state* cpu) {
     uint32_t imm = RV32_I_IMM;
 
     cpu->x[d] = cpu->x[s1] + SE32(imm, 12);
+
+    // printf("%08x: %08x %-8s x%u, x%u, %d\n", cpu->pc, cpu->opcode, "addi", d, s1, SE32(imm, 12));
 }
 void rv32_i_xori(struct rv32_state* cpu) { puts("rv32: xori unimplemented"); exit(1); }
 void rv32_i_ori(struct rv32_state* cpu) { puts("rv32: ori unimplemented"); exit(1); }
@@ -37,35 +55,95 @@ void rv32_i_slti(struct rv32_state* cpu) { puts("rv32: slti unimplemented"); exi
 void rv32_i_sltiu(struct rv32_state* cpu) { puts("rv32: sltiu unimplemented"); exit(1); }
 void rv32_i_lb(struct rv32_state* cpu) { puts("rv32: lb unimplemented"); exit(1); }
 void rv32_i_lh(struct rv32_state* cpu) { puts("rv32: lh unimplemented"); exit(1); }
-void rv32_i_lw(struct rv32_state* cpu) { puts("rv32: lw unimplemented"); exit(1); }
-void rv32_i_lbu(struct rv32_state* cpu) { puts("rv32: lbu unimplemented"); exit(1); }
+void rv32_i_lw(struct rv32_state* cpu) {
+    uint32_t d = RV32_I_RD;
+    uint32_t s1 = RV32_I_RS1;
+    uint32_t imm = RV32_I_IMM;
+
+    // printf("%08x: %08x %-8s x%u, %d(x%u)\n", cpu->pc, cpu->opcode, "lw", d, SE32(imm, 12), s1);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1] + SE32(imm, 12));
+}
+void rv32_i_lbu(struct rv32_state* cpu) {
+    uint32_t d = RV32_I_RD;
+    uint32_t s1 = RV32_I_RS1;
+    uint32_t imm = RV32_I_IMM;
+
+    // printf("%08x: %08x %-8s x%u, %d(x%u)\n", cpu->pc, cpu->opcode, "lbu", d, SE32(imm, 12), s1);
+
+    cpu->x[d] = rv32_bus_read8(cpu, cpu->x[s1] + SE32(imm, 12)) & 0xff;
+}
 void rv32_i_lhu(struct rv32_state* cpu) { puts("rv32: lhu unimplemented"); exit(1); }
-void rv32_i_sb(struct rv32_state* cpu) { puts("rv32: sb unimplemented"); exit(1); }
+void rv32_i_sb(struct rv32_state* cpu) {
+    uint32_t s1 = RV32_S_RS1;
+    uint32_t s2 = RV32_S_RS2;
+    uint32_t imm = RV32_S_IMM;
+
+    rv32_bus_write8(cpu, cpu->x[s1] + SE32(imm, 12), cpu->x[s2] & 0xff);
+
+    // printf("%08x: %08x %-8s x%u, %d(x%u)\n", cpu->pc, cpu->opcode, "sb", s2, SE32(imm, 12), s1);
+}
 void rv32_i_sh(struct rv32_state* cpu) { puts("rv32: sh unimplemented"); exit(1); }
-void rv32_i_sw(struct rv32_state* cpu) { puts("rv32: sw unimplemented"); exit(1); }
+void rv32_i_sw(struct rv32_state* cpu) {
+    uint32_t s1 = RV32_S_RS1;
+    uint32_t s2 = RV32_S_RS2;
+    uint32_t imm = RV32_S_IMM;
+
+    rv32_bus_write32(cpu, cpu->x[s1] + SE32(imm, 12), cpu->x[s2]);
+
+    // printf("%08x: %08x %-8s x%u, %d(x%u)\n", cpu->pc, cpu->opcode, "sw", s2, SE32(imm, 12), s1);
+}
 void rv32_i_beq(struct rv32_state* cpu) { puts("rv32: beq unimplemented"); exit(1); }
-void rv32_i_bne(struct rv32_state* cpu) { puts("rv32: bne unimplemented"); exit(1); }
+void rv32_i_bne(struct rv32_state* cpu) {
+    uint32_t s1 = RV32_B_RS1;
+    uint32_t s2 = RV32_B_RS2;
+    uint32_t imm = RV32_B_IMM;
+
+    // printf("%08x: %08x %-8s x%u, x%u, %x\n", cpu->pc, cpu->opcode, "bne", s1, s2, cpu->pc + SE32(imm, 13));
+
+    if (cpu->x[s1] == cpu->x[s2])
+        return;
+
+    cpu->pc = (cpu->pc - 4) + SE32(imm, 13);
+}
 void rv32_i_blt(struct rv32_state* cpu) { puts("rv32: blt unimplemented"); exit(1); }
 void rv32_i_bge(struct rv32_state* cpu) { puts("rv32: bge unimplemented"); exit(1); }
 void rv32_i_bltu(struct rv32_state* cpu) { puts("rv32: bltu unimplemented"); exit(1); }
 void rv32_i_bgeu(struct rv32_state* cpu) { puts("rv32: bgeu unimplemented"); exit(1); }
-void rv32_i_jal(struct rv32_state* cpu) { puts("rv32: jal unimplemented"); exit(1); }
-void rv32_i_jalr(struct rv32_state* cpu) { puts("rv32: jalr unimplemented"); exit(1); }
-void rv32_i_lui(struct rv32_state* cpu) { puts("rv32: lui unimplemented"); exit(1); }
-void rv32_i_auipc(struct rv32_state* cpu) {
-    uint32_t imm = RV32_U_IMM;
-    uint32_t d = RV32_U_RD;
+void rv32_i_jal(struct rv32_state* cpu) {
+    uint32_t d = RV32_J_RD;
+    uint32_t imm = RV32_J_IMM;
 
-    cpu->x[d] = cpu->pc + imm;
+    // printf("%08x: %08x %-8s x%u, %x\n", cpu->pc, cpu->opcode, "jal", d, cpu->pc + SE32(imm, 21));
 
-    printf("auipc x%u, %08x\n", d, imm);
+    cpu->x[d] = cpu->pc + 4;
+    cpu->pc = (cpu->pc - 4) + SE32(imm, 21);
 }
+void rv32_i_jalr(struct rv32_state* cpu) {
+    uint32_t d = RV32_I_RD;
+    uint32_t s1 = RV32_I_RS1;
+    uint32_t imm = RV32_I_IMM;
+
+    // printf("%08x: %08x %-8s x%u, %x\n", cpu->pc, cpu->opcode, "jalr", d, (cpu->x[s1] + SE32(imm, 12)) & 0xfffffffe);
+
+    cpu->x[d] = cpu->pc + 4;
+    cpu->pc = ((cpu->x[s1] + SE32(imm, 12)) & 0xfffffffe) - 4;
+}
+void rv32_i_lui(struct rv32_state* cpu) {
+    uint32_t d = RV32_U_RD;
+    uint32_t imm = RV32_U_IMM;
+
+    // printf("%08x: %08x %-8s x%u, %x\n", cpu->pc, cpu->opcode, "lui", d, imm);
+
+    cpu->x[d] = imm << 12;
+}
+void rv32_i_auipc(struct rv32_state* cpu) { puts("rv32: auipc unimplemented"); exit(1); }
 void rv32_i_ecall(struct rv32_state* cpu) { puts("rv32: ecall unimplemented"); exit(1); }
 void rv32_i_ebreak(struct rv32_state* cpu) { puts("rv32: ebreak unimplemented"); exit(1); }
 void rv32_i_mul(struct rv32_state* cpu) { puts("rv32: mul unimplemented"); exit(1); }
 void rv32_i_mulh(struct rv32_state* cpu) { puts("rv32: mulh unimplemented"); exit(1); }
-void rv32_i_mulsu(struct rv32_state* cpu) { puts("rv32: mulsu unimplemented"); exit(1); }
-void rv32_i_mulu(struct rv32_state* cpu) { puts("rv32: mulu unimplemented"); exit(1); }
+void rv32_i_mulhsu(struct rv32_state* cpu) { puts("rv32: mulhsu unimplemented"); exit(1); }
+void rv32_i_mulhu(struct rv32_state* cpu) { puts("rv32: mulhu unimplemented"); exit(1); }
 void rv32_i_div(struct rv32_state* cpu) { puts("rv32: div unimplemented"); exit(1); }
 void rv32_i_divu(struct rv32_state* cpu) { puts("rv32: divu unimplemented"); exit(1); }
 void rv32_i_rem(struct rv32_state* cpu) { puts("rv32: rem unimplemented"); exit(1); }
@@ -81,6 +159,7 @@ void rv32_i_amomin(struct rv32_state* cpu) { puts("rv32: amomin unimplemented");
 void rv32_i_amomax(struct rv32_state* cpu) { puts("rv32: amomax unimplemented"); exit(1); }
 void rv32_i_amominu(struct rv32_state* cpu) { puts("rv32: amominu unimplemented"); exit(1); }
 void rv32_i_amomaxu(struct rv32_state* cpu) { puts("rv32: amomaxu unimplemented"); exit(1); }
+void rv32_i_fence(struct rv32_state* cpu) { puts("rv32: fence unimplemented"); exit(1); }
 void rv32_i_fencei(struct rv32_state* cpu) { puts("rv32: fencei unimplemented"); exit(1); }
 void rv32_i_csrrw(struct rv32_state* cpu) { puts("rv32: csrrw unimplemented"); exit(1); }
 void rv32_i_csrrs(struct rv32_state* cpu) { puts("rv32: csrrs unimplemented"); exit(1); }
@@ -88,3 +167,55 @@ void rv32_i_csrrc(struct rv32_state* cpu) { puts("rv32: csrrc unimplemented"); e
 void rv32_i_csrrwi(struct rv32_state* cpu) { puts("rv32: csrrwi unimplemented"); exit(1); }
 void rv32_i_csrrsi(struct rv32_state* cpu) { puts("rv32: csrrsi unimplemented"); exit(1); }
 void rv32_i_csrrci(struct rv32_state* cpu) { puts("rv32: csrrci unimplemented"); exit(1); }
+void rv32_i_flw(struct rv32_state* cpu) { puts("rv32: flw unimplemented"); exit(1); }
+void rv32_i_fsw(struct rv32_state* cpu) { puts("rv32: fsw unimplemented"); exit(1); }
+void rv32_i_fmadds(struct rv32_state* cpu) { puts("rv32: fmadds unimplemented"); exit(1); }
+void rv32_i_fmsubs(struct rv32_state* cpu) { puts("rv32: fmsubs unimplemented"); exit(1); }
+void rv32_i_fnmsubs(struct rv32_state* cpu) { puts("rv32: fnmsubs unimplemented"); exit(1); }
+void rv32_i_fnmadds(struct rv32_state* cpu) { puts("rv32: fnmadds unimplemented"); exit(1); }
+void rv32_i_fadds(struct rv32_state* cpu) { puts("rv32: fadds unimplemented"); exit(1); }
+void rv32_i_fsubs(struct rv32_state* cpu) { puts("rv32: fsubs unimplemented"); exit(1); }
+void rv32_i_fmuls(struct rv32_state* cpu) { puts("rv32: fmuls unimplemented"); exit(1); }
+void rv32_i_fdivs(struct rv32_state* cpu) { puts("rv32: fdivs unimplemented"); exit(1); }
+void rv32_i_fsqrts(struct rv32_state* cpu) { puts("rv32: fsqrts unimplemented"); exit(1); }
+void rv32_i_fsgnjs(struct rv32_state* cpu) { puts("rv32: fsgnjs unimplemented"); exit(1); }
+void rv32_i_fsgnjns(struct rv32_state* cpu) { puts("rv32: fsgnjns unimplemented"); exit(1); }
+void rv32_i_fsgnjxs(struct rv32_state* cpu) { puts("rv32: fsgnjxs unimplemented"); exit(1); }
+void rv32_i_fmins(struct rv32_state* cpu) { puts("rv32: fmins unimplemented"); exit(1); }
+void rv32_i_fmaxs(struct rv32_state* cpu) { puts("rv32: fmaxs unimplemented"); exit(1); }
+void rv32_i_fcvtws(struct rv32_state* cpu) { puts("rv32: fcvtws unimplemented"); exit(1); }
+void rv32_i_fcvtwus(struct rv32_state* cpu) { puts("rv32: fcvtwus unimplemented"); exit(1); }
+void rv32_i_fmvxw(struct rv32_state* cpu) { puts("rv32: fmvxw unimplemented"); exit(1); }
+void rv32_i_fles(struct rv32_state* cpu) { puts("rv32: fles unimplemented"); exit(1); }
+void rv32_i_flts(struct rv32_state* cpu) { puts("rv32: flts unimplemented"); exit(1); }
+void rv32_i_feqs(struct rv32_state* cpu) { puts("rv32: feqs unimplemented"); exit(1); }
+void rv32_i_fclasss(struct rv32_state* cpu) { puts("rv32: fclasss unimplemented"); exit(1); }
+void rv32_i_fcvtsw(struct rv32_state* cpu) { puts("rv32: fcvtsw unimplemented"); exit(1); }
+void rv32_i_fcvtswu(struct rv32_state* cpu) { puts("rv32: fcvtswu unimplemented"); exit(1); }
+void rv32_i_fmvwx(struct rv32_state* cpu) { puts("rv32: fmvwx unimplemented"); exit(1); }
+void rv32_i_fld(struct rv32_state* cpu) { puts("rv32: fld unimplemented"); exit(1); }
+void rv32_i_fsd(struct rv32_state* cpu) { puts("rv32: fsd unimplemented"); exit(1); }
+void rv32_i_fmaddd(struct rv32_state* cpu) { puts("rv32: fmaddd unimplemented"); exit(1); }
+void rv32_i_fmsubd(struct rv32_state* cpu) { puts("rv32: fmsubd unimplemented"); exit(1); }
+void rv32_i_fnmsubd(struct rv32_state* cpu) { puts("rv32: fnmsubd unimplemented"); exit(1); }
+void rv32_i_fnmaddd(struct rv32_state* cpu) { puts("rv32: fnmaddd unimplemented"); exit(1); }
+void rv32_i_faddd(struct rv32_state* cpu) { puts("rv32: faddd unimplemented"); exit(1); }
+void rv32_i_fsubd(struct rv32_state* cpu) { puts("rv32: fsubd unimplemented"); exit(1); }
+void rv32_i_fmuld(struct rv32_state* cpu) { puts("rv32: fmuld unimplemented"); exit(1); }
+void rv32_i_fdivd(struct rv32_state* cpu) { puts("rv32: fdivd unimplemented"); exit(1); }
+void rv32_i_fsqrtd(struct rv32_state* cpu) { puts("rv32: fsqrtd unimplemented"); exit(1); }
+void rv32_i_fsgnjd(struct rv32_state* cpu) { puts("rv32: fsgnjd unimplemented"); exit(1); }
+void rv32_i_fsgnjnd(struct rv32_state* cpu) { puts("rv32: fsgnjnd unimplemented"); exit(1); }
+void rv32_i_fsgnjxd(struct rv32_state* cpu) { puts("rv32: fsgnjxd unimplemented"); exit(1); }
+void rv32_i_fmind(struct rv32_state* cpu) { puts("rv32: fmind unimplemented"); exit(1); }
+void rv32_i_fmaxd(struct rv32_state* cpu) { puts("rv32: fmaxd unimplemented"); exit(1); }
+void rv32_i_fcvtsd(struct rv32_state* cpu) { puts("rv32: fcvtsd unimplemented"); exit(1); }
+void rv32_i_fcvtds(struct rv32_state* cpu) { puts("rv32: fcvtds unimplemented"); exit(1); }
+void rv32_i_fled(struct rv32_state* cpu) { puts("rv32: fled unimplemented"); exit(1); }
+void rv32_i_fltd(struct rv32_state* cpu) { puts("rv32: fltd unimplemented"); exit(1); }
+void rv32_i_feqd(struct rv32_state* cpu) { puts("rv32: feqd unimplemented"); exit(1); }
+void rv32_i_fclassd(struct rv32_state* cpu) { puts("rv32: fclassd unimplemented"); exit(1); }
+void rv32_i_fcvtwd(struct rv32_state* cpu) { puts("rv32: fcvtwd unimplemented"); exit(1); }
+void rv32_i_fcvtwud(struct rv32_state* cpu) { puts("rv32: fcvtwud unimplemented"); exit(1); }
+void rv32_i_fcvtdw(struct rv32_state* cpu) { puts("rv32: fcvtdw unimplemented"); exit(1); }
+void rv32_i_fcvtdwu(struct rv32_state* cpu) { puts("rv32: fcvtdwu unimplemented"); exit(1); }

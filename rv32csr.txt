@@ -1,0 +1,9 @@
+001 rw fflags
+002 rw frm
+003 rw fcsr
+c00 ro cycle
+c01 ro time
+c02 ro instret
+c80 ro cycleh
+c81 ro timeh
+c82 ro instreth
