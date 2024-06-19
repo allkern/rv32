@@ -160,5 +160,9 @@ void rv32_i_fcvtwd(struct rv32_state* cpu);
 void rv32_i_fcvtwud(struct rv32_state* cpu);
 void rv32_i_fcvtdw(struct rv32_state* cpu);
 void rv32_i_fcvtdwu(struct rv32_state* cpu);
+void rv32_i_sret(struct rv32_state* cpu);
+void rv32_i_mret(struct rv32_state* cpu);
+void rv32_i_mnret(struct rv32_state* cpu);
+void rv32_i_wfi(struct rv32_state* cpu);
 
 #endif

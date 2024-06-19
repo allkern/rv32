@@ -100,6 +100,10 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
     switch (opcode & 0xffffffff) {
         case 0x00000073: rv32_i_ecall(cpu); return 1;
         case 0x00100073: rv32_i_ebreak(cpu); return 1;
+        case 0x10200073: rv32_i_sret(cpu); return 1;
+        case 0x30200073: rv32_i_mret(cpu); return 1;
+        case 0x70200073: rv32_i_mnret(cpu); return 1;
+        case 0x10500073: rv32_i_wfi(cpu); return 1;
     }
 
     switch (opcode & 0xf800707f) {

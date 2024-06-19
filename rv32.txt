@@ -116,3 +116,7 @@ fff0007f c2000053 fcvtwd
 fff0007f c2100053 fcvtwud
 fff0007f d2000053 fcvtdw
 fff0007f d2100053 fcvtdwu
+ffffffff 10200073 sret
+ffffffff 30200073 mret
+ffffffff 70200073 mnret
+ffffffff 10500073 wfi
