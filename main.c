@@ -1,10 +1,9 @@
 #include <stdio.h>
 
-#include "rv32.h"
-#include "bus.h"
-#include "ram.h"
-#include "tty.h"
-
+#include "rv32/rv32.h"
+#include "machine/bus.h"
+#include "machine/ram.h"
+#include "machine/tty.h"
 #include "elf_ldr.h"
 
 #define RAM_START 0x80000000

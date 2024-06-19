@@ -1,6 +1,8 @@
 .vscode/
 isa/
-*.cpp
+SDL2-2.30.3/
+bin/
+build/
 *.exe
 *.bin
 *.elf

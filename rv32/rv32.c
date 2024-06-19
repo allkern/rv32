@@ -17,18 +17,18 @@ void rv32_init(struct rv32_state* cpu, struct rv32_bus bus) {
 int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
     switch (opcode & 0xfe00707f) {
         case 0x00000033: rv32_i_add(cpu); return 1;
-        case 0x02000033: rv32_i_sub(cpu); return 1;
+        case 0x40000033: rv32_i_sub(cpu); return 1;
         case 0x00004033: rv32_i_xor(cpu); return 1;
         case 0x00006033: rv32_i_or(cpu); return 1;
         case 0x00007033: rv32_i_and(cpu); return 1;
         case 0x00001033: rv32_i_sll(cpu); return 1;
         case 0x00005033: rv32_i_srl(cpu); return 1;
-        case 0x02005033: rv32_i_sra(cpu); return 1;
+        case 0x40005033: rv32_i_sra(cpu); return 1;
         case 0x00002033: rv32_i_slt(cpu); return 1;
         case 0x00003033: rv32_i_sltu(cpu); return 1;
         case 0x00001013: rv32_i_slli(cpu); return 1;
         case 0x00005013: rv32_i_srli(cpu); return 1;
-        case 0x02005013: rv32_i_srai(cpu); return 1;
+        case 0x40005013: rv32_i_srai(cpu); return 1;
         case 0x00100033: rv32_i_mul(cpu); return 1;
         case 0x00101033: rv32_i_mulh(cpu); return 1;
         case 0x00102033: rv32_i_mulhsu(cpu); return 1;
