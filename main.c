@@ -7,13 +7,12 @@
 
 #include "elf_ldr.h"
 
-#define RAM_START 0x00000000
+#define RAM_START 0x80000000
 #define TTY_START 0xa0000000
 #define RAM_SIZE 0x1000000
 #define TTY_SIZE 0x8
 
-
-int main() {
+int main(int argc, const char* argv[]) {
     struct rv32_state* cpu = rv32_create();
     struct bus_state* bus = bus_create();
     struct ram_state* ram = ram_create();
@@ -49,7 +48,7 @@ int main() {
 
     elf_file_t* elf = elf_create();
 
-    if (elf_load(elf, "test/test.elf"))
+    if (elf_load(elf, argv[1]))
         return 1;
 
     puts("Program Headers:");
@@ -74,14 +73,14 @@ int main() {
         if (elf->phdr[i]->p_type != PT_LOAD)
             continue;
 
-        elf_load_segment(elf, i, &ram->buf[phdr->p_paddr]);
+        elf_load_segment(elf, i, &ram->buf[phdr->p_paddr - RAM_START]);
     }
 
     // Initialize stack
     cpu->x[2] = RAM_START + RAM_SIZE;
 
     // Set PC to entry point
-    rv32_set_pc(cpu, RAM_START + elf->ehdr->e_entry);
+    rv32_set_pc(cpu, elf->ehdr->e_entry);
 
     printf("Initialized CPU with PC=%08x SP=%08x\n",
         cpu->pc,

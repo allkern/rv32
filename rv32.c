@@ -15,7 +15,7 @@ void rv32_init(struct rv32_state* cpu, struct rv32_bus bus) {
 }
 
 int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
-    switch (opcode & 0xfff0707f) {
+    switch (opcode & 0xfe00707f) {
         case 0x00000033: rv32_i_add(cpu); return 1;
         case 0x02000033: rv32_i_sub(cpu); return 1;
         case 0x00004033: rv32_i_xor(cpu); return 1;
@@ -37,10 +37,22 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
         case 0x00105033: rv32_i_divu(cpu); return 1;
         case 0x00106033: rv32_i_rem(cpu); return 1;
         case 0x00107033: rv32_i_remu(cpu); return 1;
-        case 0xe0000053: rv32_i_fmvxw(cpu); return 1;
-        case 0xe0001053: rv32_i_fclasss(cpu); return 1;
-        case 0xf0000053: rv32_i_fmvwx(cpu); return 1;
-        case 0xe2001053: rv32_i_fclassd(cpu); return 1;
+        case 0x20000053: rv32_i_fsgnjs(cpu); return 1;
+        case 0x20001053: rv32_i_fsgnjns(cpu); return 1;
+        case 0x20002053: rv32_i_fsgnjxs(cpu); return 1;
+        case 0x28000053: rv32_i_fmins(cpu); return 1;
+        case 0x28001053: rv32_i_fmaxs(cpu); return 1;
+        case 0xa0000053: rv32_i_fles(cpu); return 1;
+        case 0xa0001053: rv32_i_flts(cpu); return 1;
+        case 0xa0002053: rv32_i_feqs(cpu); return 1;
+        case 0x22000053: rv32_i_fsgnjd(cpu); return 1;
+        case 0x22001053: rv32_i_fsgnjnd(cpu); return 1;
+        case 0x22002053: rv32_i_fsgnjxd(cpu); return 1;
+        case 0x2a000053: rv32_i_fmind(cpu); return 1;
+        case 0x2a001053: rv32_i_fmaxd(cpu); return 1;
+        case 0xa2000053: rv32_i_fled(cpu); return 1;
+        case 0xa2001053: rv32_i_fltd(cpu); return 1;
+        case 0xa2002053: rv32_i_feqd(cpu); return 1;
     }
 
     switch (opcode & 0x0000707f) {
@@ -91,9 +103,9 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
     }
 
     switch (opcode & 0xf800707f) {
+        case 0x1000202f: rv32_i_lr(cpu); return 1;
         case 0x0000202f: rv32_i_amoadd(cpu); return 1;
         case 0x0800202f: rv32_i_amoswap(cpu); return 1;
-        case 0x1000202f: rv32_i_lr(cpu); return 1;
         case 0x1800202f: rv32_i_sc(cpu); return 1;
         case 0x2000202f: rv32_i_amoxor(cpu); return 1;
         case 0x5000202f: rv32_i_amoor(cpu); return 1;
@@ -102,6 +114,13 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
         case 0xa000202f: rv32_i_amomax(cpu); return 1;
         case 0xc000202f: rv32_i_amominu(cpu); return 1;
         case 0xe000202f: rv32_i_amomaxu(cpu); return 1;
+    }
+
+    switch (opcode & 0xfff0707f) {
+        case 0xe0000053: rv32_i_fmvxw(cpu); return 1;
+        case 0xe0001053: rv32_i_fclasss(cpu); return 1;
+        case 0xf0000053: rv32_i_fmvwx(cpu); return 1;
+        case 0xe2001053: rv32_i_fclassd(cpu); return 1;
     }
 
     switch (opcode & 0x0600007f) {
@@ -139,25 +158,6 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
         case 0xc2100053: rv32_i_fcvtwud(cpu); return 1;
         case 0xd2000053: rv32_i_fcvtdw(cpu); return 1;
         case 0xd2100053: rv32_i_fcvtdwu(cpu); return 1;
-    }
-
-    switch (opcode & 0xfe00707f) {
-        case 0x20000053: rv32_i_fsgnjs(cpu); return 1;
-        case 0x20001053: rv32_i_fsgnjns(cpu); return 1;
-        case 0x20002053: rv32_i_fsgnjxs(cpu); return 1;
-        case 0x28000053: rv32_i_fmins(cpu); return 1;
-        case 0x28001053: rv32_i_fmaxs(cpu); return 1;
-        case 0xa0000053: rv32_i_fles(cpu); return 1;
-        case 0xa0001053: rv32_i_flts(cpu); return 1;
-        case 0xa0002053: rv32_i_feqs(cpu); return 1;
-        case 0x22000053: rv32_i_fsgnjd(cpu); return 1;
-        case 0x22001053: rv32_i_fsgnjnd(cpu); return 1;
-        case 0x22002053: rv32_i_fsgnjxd(cpu); return 1;
-        case 0x2a000053: rv32_i_fmind(cpu); return 1;
-        case 0x2a001053: rv32_i_fmaxd(cpu); return 1;
-        case 0xa2000053: rv32_i_fled(cpu); return 1;
-        case 0xa2001053: rv32_i_fltd(cpu); return 1;
-        case 0xa2002053: rv32_i_feqd(cpu); return 1;
     }
 
     return 0;

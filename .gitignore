@@ -1,4 +1,5 @@
 .vscode/
+isa/
 *.cpp
 *.exe
 *.bin
