@@ -1,7 +1,8 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <fenv.h>
-#include <assert.h>
 
 #include "rv32.h"
 
@@ -82,6 +83,12 @@
 #define RV32_CSS_RS2 ((cpu->opcode >> 2) & 0x1f)
 
 #define SE32(v, b) (((int32_t)((v) << (32 - b))) >> (32 - b))
+#define S64(v) ((int64_t)((int32_t)v))
+
+#define MAXU(a, b) ((a) > (b) ? (a) : (b))
+#define MINU(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) (((int32_t)a) > ((int32_t)b) ? (a) : (b))
+#define MIN(a, b) (((int32_t)a) < ((int32_t)b) ? (a) : (b))
 
 void rv32_i_add(struct rv32_state* cpu) {
     uint32_t d = RV32_R_RD;
@@ -431,34 +438,253 @@ void rv32_i_ecall(struct rv32_state* cpu) {
     if (cpu->x[17] != 93)
         return;
 
-    if (cpu->x[10]) {
-        // printf("fail!\n");
-    } else {
-        // printf("pass!\n");
-    }
-
     exit(1);
 }
 void rv32_i_ebreak(struct rv32_state* cpu) { puts("rv32: ebreak unimplemented"); exit(1); }
-void rv32_i_mul(struct rv32_state* cpu) { puts("rv32: mul unimplemented"); exit(1); }
-void rv32_i_mulh(struct rv32_state* cpu) { puts("rv32: mulh unimplemented"); exit(1); }
-void rv32_i_mulhsu(struct rv32_state* cpu) { puts("rv32: mulhsu unimplemented"); exit(1); }
-void rv32_i_mulhu(struct rv32_state* cpu) { puts("rv32: mulhu unimplemented"); exit(1); }
-void rv32_i_div(struct rv32_state* cpu) { puts("rv32: div unimplemented"); exit(1); }
-void rv32_i_divu(struct rv32_state* cpu) { puts("rv32: divu unimplemented"); exit(1); }
-void rv32_i_rem(struct rv32_state* cpu) { puts("rv32: rem unimplemented"); exit(1); }
-void rv32_i_remu(struct rv32_state* cpu) { puts("rv32: remu unimplemented"); exit(1); }
-void rv32_i_amoadd(struct rv32_state* cpu) { puts("rv32: amoadd unimplemented"); exit(1); }
-void rv32_i_amoswap(struct rv32_state* cpu) { puts("rv32: amoswap unimplemented"); exit(1); }
-void rv32_i_lr(struct rv32_state* cpu) { puts("rv32: lr unimplemented"); exit(1); }
-void rv32_i_sc(struct rv32_state* cpu) { puts("rv32: sc unimplemented"); exit(1); }
-void rv32_i_amoxor(struct rv32_state* cpu) { puts("rv32: amoxor unimplemented"); exit(1); }
-void rv32_i_amoor(struct rv32_state* cpu) { puts("rv32: amoor unimplemented"); exit(1); }
-void rv32_i_amoand(struct rv32_state* cpu) { puts("rv32: amoand unimplemented"); exit(1); }
-void rv32_i_amomin(struct rv32_state* cpu) { puts("rv32: amomin unimplemented"); exit(1); }
-void rv32_i_amomax(struct rv32_state* cpu) { puts("rv32: amomax unimplemented"); exit(1); }
-void rv32_i_amominu(struct rv32_state* cpu) { puts("rv32: amominu unimplemented"); exit(1); }
-void rv32_i_amomaxu(struct rv32_state* cpu) { puts("rv32: amomaxu unimplemented"); exit(1); }
+void rv32_i_mul(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "mul", d, s1, s2);
+
+    cpu->x[d] = cpu->x[s1] * cpu->x[s2];
+}
+void rv32_i_mulh(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    uint64_t r = S64(cpu->x[s1]) * S64(cpu->x[s2]);
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "mulh", d, s1, s2);
+
+    cpu->x[d] = r >> 32;
+}
+void rv32_i_mulhsu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    uint64_t r = S64(cpu->x[s1]) * cpu->x[s2];
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "mulhsu", d, s1, s2);
+
+    cpu->x[d] = r >> 32;
+}
+void rv32_i_mulhu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    uint64_t r = (uint64_t)cpu->x[s1] * (uint64_t)cpu->x[s2];
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "mulhu", d, s1, s2);
+
+    cpu->x[d] = r >> 32;
+}
+void rv32_i_div(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "div", d, s1, s2);
+
+    if (!cpu->x[s2]) {
+        cpu->x[d] = -1;
+
+        return;
+    }
+
+    if (cpu->x[s1] == 0x80000000 && cpu->x[s2] == 0xffffffff) {
+        cpu->x[d] = 0x80000000;
+
+        return;
+    }
+
+    cpu->x[d] = (int32_t)cpu->x[s1] / (int32_t)cpu->x[s2];
+}
+void rv32_i_divu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "divu", d, s1, s2);
+
+    if (!cpu->x[s2]) {
+        cpu->x[d] = 0xffffffff;
+
+        return;
+    }
+
+    cpu->x[d] = cpu->x[s1] / cpu->x[s2];
+}
+void rv32_i_rem(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "rem", d, s1, s2);
+
+    if (!cpu->x[s2]) {
+        cpu->x[d] = cpu->x[s1];
+
+        return;
+    }
+
+    if (cpu->x[s1] == 0x80000000 && cpu->x[s2] == 0xffffffff) {
+        cpu->x[d] = 0;
+
+        return;
+    }
+
+    cpu->x[d] = (int32_t)cpu->x[s1] % (int32_t)cpu->x[s2];
+}
+void rv32_i_remu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "remu", d, s1, s2);
+
+    if (!cpu->x[s2]) {
+        cpu->x[d] = cpu->x[s1];
+
+        return;
+    }
+
+    cpu->x[d] = cpu->x[s1] % cpu->x[s2];
+}
+void rv32_i_amoadd(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amoadd.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[d] + cpu->x[s2]);
+}
+void rv32_i_amoswap(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amoswap.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[s2]);
+}
+void rv32_i_lr(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "lr.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    cpu->res_addr = cpu->x[s1];
+    cpu->res_value = cpu->x[d];
+    cpu->res_valid = 1;
+}
+void rv32_i_sc(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "sc.w", d, s1, s2);
+
+    if (cpu->x[s1] != cpu->res_addr || !cpu->res_valid) {
+        cpu->x[d] = 1;
+
+        return;
+    }
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[s2]);
+
+    cpu->res_valid = 0;
+    cpu->x[d] = 0;
+}
+void rv32_i_amoxor(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amoxor.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[d] ^ cpu->x[s2]);
+}
+void rv32_i_amoor(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amoor.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[d] | cpu->x[s2]);
+}
+void rv32_i_amoand(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amoand.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], cpu->x[d] & cpu->x[s2]);
+}
+void rv32_i_amomin(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amomin.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], MIN(cpu->x[d], cpu->x[s2]));
+}
+void rv32_i_amomax(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amomax.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], MAX(cpu->x[d], cpu->x[s2]));
+}
+void rv32_i_amominu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amominu.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], MINU(cpu->x[d], cpu->x[s2]));
+}
+void rv32_i_amomaxu(struct rv32_state* cpu) {
+    uint32_t d = RV32_R_RD;
+    uint32_t s1 = RV32_R_RS1;
+    uint32_t s2 = RV32_R_RS2;
+
+    // printf("%08x: %08x %-10s x%u, x%u, x%u\n", cpu->pc, cpu->opcode, "amomaxu.w", d, s1, s2);
+
+    cpu->x[d] = rv32_bus_read32(cpu, cpu->x[s1]);
+
+    rv32_bus_write32(cpu, cpu->x[s1], MAXU(cpu->x[d], cpu->x[s2]));
+}
 void rv32_i_fence(struct rv32_state* cpu) {
     uint32_t d = RV32_CSR_RD;
     uint32_t s1 = RV32_CSR_RS1;

@@ -27,6 +27,11 @@ struct rv32_state {
     uint32_t pc;
     uint32_t opcode;
 
+    // LR/SC reservation
+    uint32_t res_value;
+    uint32_t res_addr;
+    int res_valid;
+
     union {
         uint64_t u64;
         double d;
