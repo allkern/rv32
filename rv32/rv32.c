@@ -14,6 +14,67 @@ void rv32_init(struct rv32_state* cpu, struct rv32_bus bus) {
     cpu->bus = bus;
 }
 
+int rv32_execute_compressed(struct rv32_state* cpu, uint32_t opcode) {
+    // c.addi16sp is "overlaid" on top of c.lui (disgusting)
+    switch (opcode & 0xef83) {
+        case 0x6101: rv32_i_caddi16sp(cpu); return 1;
+    }
+
+    switch (opcode & 0xffff) {
+        case 0x0001: rv32_i_cnop(cpu); return 1;
+        case 0x9002: rv32_i_cebreak(cpu); return 1;
+    }
+
+    switch (opcode & 0xf07f) {
+        case 0x8002: rv32_i_cjr(cpu); return 1;
+        case 0x9002: rv32_i_cjalr(cpu); return 1;
+    }
+
+    switch (opcode & 0xe003) {
+        case 0x0000: rv32_i_caddi4spn(cpu); return 1;
+        case 0x2000: rv32_i_cfld(cpu); return 1;
+        case 0x4000: rv32_i_clw(cpu); return 1;
+        case 0x6000: rv32_i_cflw(cpu); return 1;
+        case 0xa000: rv32_i_cfsd(cpu); return 1;
+        case 0xc000: rv32_i_csw(cpu); return 1;
+        case 0xe000: rv32_i_cfsw(cpu); return 1;
+        case 0x0001: rv32_i_caddi(cpu); return 1;
+        case 0x2001: rv32_i_cjal(cpu); return 1;
+        case 0x4001: rv32_i_cli(cpu); return 1;
+        case 0x6001: rv32_i_clui(cpu); return 1;
+        case 0xa001: rv32_i_cj(cpu); return 1;
+        case 0xc001: rv32_i_cbeqz(cpu); return 1;
+        case 0xe001: rv32_i_cbnez(cpu); return 1;
+        case 0x0002: rv32_i_cslli(cpu); return 1;
+        case 0x2002: rv32_i_cfldsp(cpu); return 1;
+        case 0x4002: rv32_i_clwsp(cpu); return 1;
+        case 0x6002: rv32_i_cflwsp(cpu); return 1;
+        case 0xa002: rv32_i_cfsdsp(cpu); return 1;
+        case 0xc002: rv32_i_cswsp(cpu); return 1;
+        case 0xe002: rv32_i_cfswsp(cpu); return 1;
+    }
+
+    switch (opcode & 0xec03) {
+        case 0x8001: rv32_i_csrli(cpu); return 1;
+        case 0x8401: rv32_i_csrai(cpu); return 1;
+        case 0x8801: rv32_i_candi(cpu); return 1;
+    }
+
+    switch (opcode & 0xec63) {
+        case 0x8c01: rv32_i_csub(cpu); return 1;
+        case 0x8c21: rv32_i_cxor(cpu); return 1;
+        case 0x8c41: rv32_i_cor(cpu); return 1;
+        case 0x8c61: rv32_i_cand(cpu); return 1;
+    }
+
+    switch (opcode & 0xf003) {
+        case 0x8002: rv32_i_cmv(cpu); return 1;
+        case 0x9002: rv32_i_cadd(cpu); return 1;
+    }
+
+    return 0;
+}
+
 int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
     switch (opcode & 0xfe00707f) {
         case 0x00000033: rv32_i_add(cpu); return 1;
@@ -170,10 +231,15 @@ int rv32_execute(struct rv32_state* cpu, uint32_t opcode) {
 void rv32_cycle(struct rv32_state* cpu) {
     cpu->opcode = rv32_bus_read32(cpu, cpu->pc);
 
-    cpu->x[0] = 0;
+    if (rv32_execute_compressed(cpu, cpu->opcode)) {
+        cpu->x[0] = 0;
+        cpu->pc += 2;
+
+        return;
+    }
 
     if (!rv32_execute(cpu, cpu->opcode)) {
-        printf("Unimplemented instruction %08x\n", cpu->opcode);
+        printf("%08x: Unimplemented instruction %08x\n", cpu->pc, cpu->opcode);
 
         exit(1);
     }

@@ -26,6 +26,15 @@ struct rv32_state {
     uint32_t x[32];
     uint32_t pc;
     uint32_t opcode;
+
+    union {
+        uint64_t u64;
+        double d;
+        uint32_t u32;
+        float f;
+    } f[32];
+
+    uint32_t fcsr;
 };
 
 struct rv32_state* rv32_create(void);
@@ -164,5 +173,41 @@ void rv32_i_sret(struct rv32_state* cpu);
 void rv32_i_mret(struct rv32_state* cpu);
 void rv32_i_mnret(struct rv32_state* cpu);
 void rv32_i_wfi(struct rv32_state* cpu);
+
+void rv32_i_caddi4spn(struct rv32_state* cpu);
+void rv32_i_cfld(struct rv32_state* cpu);
+void rv32_i_clw(struct rv32_state* cpu);
+void rv32_i_cflw(struct rv32_state* cpu);
+void rv32_i_cfsd(struct rv32_state* cpu);
+void rv32_i_csw(struct rv32_state* cpu);
+void rv32_i_cfsw(struct rv32_state* cpu);
+void rv32_i_cnop(struct rv32_state* cpu);
+void rv32_i_caddi(struct rv32_state* cpu);
+void rv32_i_cjal(struct rv32_state* cpu);
+void rv32_i_cli(struct rv32_state* cpu);
+void rv32_i_caddi16sp(struct rv32_state* cpu);
+void rv32_i_clui(struct rv32_state* cpu);
+void rv32_i_csrli(struct rv32_state* cpu);
+void rv32_i_csrai(struct rv32_state* cpu);
+void rv32_i_candi(struct rv32_state* cpu);
+void rv32_i_csub(struct rv32_state* cpu);
+void rv32_i_cxor(struct rv32_state* cpu);
+void rv32_i_cor(struct rv32_state* cpu);
+void rv32_i_cand(struct rv32_state* cpu);
+void rv32_i_cj(struct rv32_state* cpu);
+void rv32_i_cbeqz(struct rv32_state* cpu);
+void rv32_i_cbnez(struct rv32_state* cpu);
+void rv32_i_cslli(struct rv32_state* cpu);
+void rv32_i_cfldsp(struct rv32_state* cpu);
+void rv32_i_clwsp(struct rv32_state* cpu);
+void rv32_i_cflwsp(struct rv32_state* cpu);
+void rv32_i_cjr(struct rv32_state* cpu);
+void rv32_i_cmv(struct rv32_state* cpu);
+void rv32_i_cebreak(struct rv32_state* cpu);
+void rv32_i_cjalr(struct rv32_state* cpu);
+void rv32_i_cadd(struct rv32_state* cpu);
+void rv32_i_cfsdsp(struct rv32_state* cpu);
+void rv32_i_cswsp(struct rv32_state* cpu);
+void rv32_i_cfswsp(struct rv32_state* cpu);
 
 #endif

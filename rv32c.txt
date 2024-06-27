@@ -25,8 +25,8 @@ e003 0002 cslli
 e003 2002 cfldsp
 e003 4002 clwsp
 e003 6002 cflwsp
-e07f 8002 cjr
-e003 8002 cmv
+f07f 8002 cjr
+f003 8002 cmv
 ffff 9002 cebreak
 f07f 9002 cjalr
 f003 9002 cadd

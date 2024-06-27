@@ -49,7 +49,6 @@ c++ -I"$($RV32_DIR)" `
     -DOS_INFO="`"$($OS_INFO)`"" `
     -L"$($SDL2_DIR)\lib" `
     -m64 -lSDL2main -lSDL2 `
-    -Wall -pedantic `
     -ffast-math -Ofast -flto
 
 Copy-Item -Path "$($SDL2_DIR)\bin\SDL2.dll" -Destination "bin"
